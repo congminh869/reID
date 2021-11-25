@@ -25,10 +25,10 @@ import socket
 import pickle
 import base64
 
-# from sweep0 import ratio
+from control_dc import ratio
 
 def camera_ratio(x,y):
-	a = 50
+	a = 10
 	thres_min = 320 - a
 	thres_max = 320 + a
 	if x>=thres_max and y>=thres_min and y<=thres_max: # right
@@ -39,13 +39,13 @@ def camera_ratio(x,y):
 		return 1
 	elif x>=thres_min and x<=thres_max and y>=thres_max:#down
 		return 4
-	elif x<=thres_min and y<=thres_min:	#left down
+	elif x<=thres_min and y>=thres_max:	#left down
 		return 6
-	elif x>=thres_max and y<=thres_min:	#down right
+	elif x>=thres_max and y>=thres_max:	#down right
 		return 8
-	elif x>=thres_max and y>=thres_max:	#right up
+	elif x>=thres_max and y<=thres_min:	#right up
 		return 7
-	elif x<=thres_min and y>=thres_max:#up left
+	elif x<=thres_min and y<=thres_min:#up left
 		return 5
 	elif x>=thres_min and x<=thres_max and y>=thres_min and y<=thres_max:#stop
 		return 9
@@ -124,7 +124,7 @@ def detect_obj(model, stride, names, img_detect = '', iou_thres = 0.4, conf_thre
 						text_signal = ['left', 'right', 'up', 'down', 'left+up', 'left+down', 'right+up', 'right+down', 'stop']
 						cv2.rectangle(img_detect, c1, c2, (0,0,255), 2)
 						cv2.rectangle(img_detect, (x_center,y_center), (x_center+2,y_center+2), (0,0,255), 2)
-						# ratio(signal)
+						ratio(signal)
 						cv2.putText(img_detect,text_signal[signal-1], (x_center,y_center), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
 			
 					# cv2.imshow('frame ', img_detect)
