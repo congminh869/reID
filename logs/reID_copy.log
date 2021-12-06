@@ -1,0 +1,270 @@
+YOLOv5 🚀 2021-7-13 torch 1.9.0a0+gitd69c22d 
+Model Summary: 224 layers, 7266973 parameters, 0 gradients
+[ WARN:0] global /home/mq/opencv/modules/videoio/src/cap_gstreamer.cpp (1081) open OpenCV | GStreamer warning: Cannot query video position: status=0, value=-1, duration=-1
+/home/mq/Desktop/reID_copy/server_multi_thread_reID.py:318: YAMLLoadWarning: calling yaml.load() without Loader=... is deprecated, as the default Loader is unsafe. Please read https://msg.pyyaml.org/load for full details.
+  config = yaml.load(stream)
+/usr/local/lib/python3.6/dist-packages/torchvision/transforms/transforms.py:281: UserWarning: Argument interpolation should be of type InterpolationMode instead of int. Please, use InterpolationMode enum.
+  "Argument interpolation should be of type InterpolationMode instead of int. "
+/usr/local/lib/python3.6/dist-packages/torch/nn/functional.py:718: UserWarning: Named tensors and all their associated APIs are an experimental feature and subject to change. Please do not use them for anything important until they are released as stable. (Triggered internally at  ../c10/core/TensorImpl.h:1156.)
+  return torch.max_pool2d(input, kernel_size, stride, padding, dilation, ceil_mode)
+ratio_start
+use_gpu :  True
+=================Loading models yolov5=================
+Fusing layers... 
+time load model yolo :  8.692525863647461
+ft_ResNet50
+=================Loading models ft_ResNet50=================
+time load model ft_ResNet50 :  0.7064108848571777
+Loaded models in 12.085 s
+Starting thread
+==================================start threading socket==================================
+Starting convert
+==================================start detect object==================================
+wait connect socket from client
+count_c :  0
+check_select_person
+Exception ignored in: <module 'threading' from '/usr/lib/python3.6/threading.py'>
+Traceback (most recent call last):
+  File "/usr/lib/python3.6/threading.py", line 1294, in _shutdown
+    t.join()
+  File "/usr/lib/python3.6/threading.py", line 1056, in join
+    self._wait_for_tstate_lock()
+  File "/usr/lib/python3.6/threading.py", line 1072, in _wait_for_tstate_lock
+    elif lock.acquire(block, timeout):
+KeyboardInterrupt
+YOLOv5 🚀 2021-7-13 torch 1.9.0a0+gitd69c22d 
+ratio_start
+use_gpu :  True
+=================Loading models yolov5=================
+Fusing layers... 
+Traceback (most recent call last):
+  File "/home/mq/Desktop/reID_copy/server_multi_thread_reID.py", line 307, in <module>
+    model = attempt_load(weights, map_location=device)  # load FP32 model
+  File "/home/mq/Desktop/reID_copy/models/experimental.py", line 137, in attempt_load
+    model.append(torch.load(w, map_location=map_location)['model'].float().fuse().eval())  # load FP32 model
+  File "/home/mq/Desktop/reID_copy/models/yolo.py", line 171, in fuse
+    m.conv = fuse_conv_and_bn(m.conv, m.bn)  # update conv
+  File "/home/mq/Desktop/reID_copy/utils/torch_utils.py", line 189, in fuse_conv_and_bn
+    bias=True).requires_grad_(False).to(conv.weight.device)
+  File "/usr/local/lib/python3.6/dist-packages/torch/nn/modules/conv.py", line 432, in __init__
+    False, _pair(0), groups, bias, padding_mode, **factory_kwargs)
+  File "/usr/local/lib/python3.6/dist-packages/torch/nn/modules/conv.py", line 138, in __init__
+    self.reset_parameters()
+  File "/usr/local/lib/python3.6/dist-packages/torch/nn/modules/conv.py", line 141, in reset_parameters
+    init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+  File "/usr/local/lib/python3.6/dist-packages/torch/nn/init.py", line 395, in kaiming_uniform_
+    return tensor.uniform_(-bound, bound)
+KeyboardInterrupt
+YOLOv5 🚀 2021-7-13 torch 1.9.0a0+gitd69c22d 
+Model Summary: 224 layers, 7266973 parameters, 0 gradients
+[ WARN:0] global /home/mq/opencv/modules/videoio/src/cap_gstreamer.cpp (1081) open OpenCV | GStreamer warning: Cannot query video position: status=0, value=-1, duration=-1
+/home/mq/Desktop/reID_copy/server_multi_thread_reID.py:318: YAMLLoadWarning: calling yaml.load() without Loader=... is deprecated, as the default Loader is unsafe. Please read https://msg.pyyaml.org/load for full details.
+  config = yaml.load(stream)
+/usr/local/lib/python3.6/dist-packages/torchvision/transforms/transforms.py:281: UserWarning: Argument interpolation should be of type InterpolationMode instead of int. Please, use InterpolationMode enum.
+  "Argument interpolation should be of type InterpolationMode instead of int. "
+/usr/local/lib/python3.6/dist-packages/torch/nn/functional.py:718: UserWarning: Named tensors and all their associated APIs are an experimental feature and subject to change. Please do not use them for anything important until they are released as stable. (Triggered internally at  ../c10/core/TensorImpl.h:1156.)
+  return torch.max_pool2d(input, kernel_size, stride, padding, dilation, ceil_mode)
+ratio_start
+use_gpu :  True
+=================Loading models yolov5=================
+Fusing layers... 
+time load model yolo :  8.450908422470093
+ft_ResNet50
+=================Loading models ft_ResNet50=================
+time load model ft_ResNet50 :  0.14464831352233887
+Loaded models in 11.233 s
+Starting thread
+==================================start threading socket==================================
+Starting convert
+==================================start detect object==================================
+wait connect socket from client
+count_c :  0
+check_select_person
+Exception ignored in: <module 'threading' from '/usr/lib/python3.6/threading.py'>
+Traceback (most recent call last):
+  File "/usr/lib/python3.6/threading.py", line 1294, in _shutdown
+    t.join()
+  File "/usr/lib/python3.6/threading.py", line 1056, in join
+    self._wait_for_tstate_lock()
+  File "/usr/lib/python3.6/threading.py", line 1072, in _wait_for_tstate_lock
+    elif lock.acquire(block, timeout):
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/home/mq/Desktop/reID_copy/server_multi_thread_reID.py", line 9, in <module>
+    from models.experimental import attempt_load
+  File "/home/mq/Desktop/reID_copy/models/experimental.py", line 7, in <module>
+    from models.common import Conv, DWConv
+  File "/home/mq/Desktop/reID_copy/models/common.py", line 17, in <module>
+    from utils.plots import color_list, plot_one_box
+  File "/home/mq/Desktop/reID_copy/utils/plots.py", line 15, in <module>
+    import seaborn as sns
+ModuleNotFoundError: No module named 'seaborn'
+Traceback (most recent call last):
+  File "/home/mq/Desktop/reID_copy/server_multi_thread_reID.py", line 9, in <module>
+    from models.experimental import attempt_load
+  File "/home/mq/Desktop/reID_copy/models/experimental.py", line 7, in <module>
+    from models.common import Conv, DWConv
+  File "/home/mq/Desktop/reID_copy/models/common.py", line 17, in <module>
+    from utils.plots import color_list, plot_one_box
+  File "/home/mq/Desktop/reID_copy/utils/plots.py", line 15, in <module>
+    import seaborn as sns
+ModuleNotFoundError: No module named 'seaborn'
+YOLOv5 🚀 2021-7-13 torch 1.9.0a0+gitd69c22d 
+ratio_start
+use_gpu :  True
+=================Loading models yolov5=================
+Downloading https://github.com/ultralytics/yolov5/releases/download/v6.0/yolov5s.pt to model/yolov5s.pt...
+Download error: [Errno 2] No such file or directory: 'model/tmp2npqb53v'
+Traceback (most recent call last):
+  File "/home/mq/Desktop/reID_copy/utils/google_utils.py", line 39, in attempt_download
+    torch.hub.download_url_to_file(url, file)
+  File "/usr/local/lib/python3.6/dist-packages/torch/hub.py", line 433, in download_url_to_file
+    f = tempfile.NamedTemporaryFile(delete=False, dir=dst_dir)
+  File "/usr/lib/python3.6/tempfile.py", line 690, in NamedTemporaryFile
+    (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+  File "/usr/lib/python3.6/tempfile.py", line 401, in _mkstemp_inner
+    fd = _os.open(file, flags, 0o600)
+FileNotFoundError: [Errno 2] No such file or directory: 'model/tmp2npqb53v'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/mq/Desktop/reID_copy/utils/google_utils.py", line 43, in attempt_download
+    assert redundant, 'No secondary mirror'
+AssertionError: No secondary mirror
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/mq/Desktop/reID_copy/server_multi_thread_reID.py", line 307, in <module>
+    model = attempt_load(weights, map_location=device)  # load FP32 model
+  File "/home/mq/Desktop/reID_copy/models/experimental.py", line 136, in attempt_load
+    attempt_download(w)
+  File "/home/mq/Desktop/reID_copy/utils/google_utils.py", line 49, in attempt_download
+    file.unlink(missing_ok=True)  # remove partial downloads
+TypeError: unlink() got an unexpected keyword argument 'missing_ok'
+Traceback (most recent call last):
+  File "/home/mq/Desktop/reID_copy/server_multi_thread_reID.py", line 9, in <module>
+    from models.experimental import attempt_load
+  File "/home/mq/Desktop/reID_copy/models/experimental.py", line 7, in <module>
+    from models.common import Conv, DWConv
+  File "/home/mq/Desktop/reID_copy/models/common.py", line 17, in <module>
+    from utils.plots import color_list, plot_one_box
+  File "/home/mq/Desktop/reID_copy/utils/plots.py", line 15, in <module>
+    import seaborn as sns
+ModuleNotFoundError: No module named 'seaborn'
+YOLOv5 🚀 2021-7-13 torch 1.9.0a0+gitd69c22d 
+Model Summary: 224 layers, 7266973 parameters, 0 gradients
+[ WARN:0] global /home/mq/opencv/modules/videoio/src/cap_gstreamer.cpp (1081) open OpenCV | GStreamer warning: Cannot query video position: status=0, value=-1, duration=-1
+Traceback (most recent call last):
+  File "/home/mq/.local/lib/python3.6/site-packages/serial/serialposix.py", line 322, in open
+    self.fd = os.open(self.portstr, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+PermissionError: [Errno 13] Permission denied: '/dev/ttyUSB0'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/mq/Desktop/reID_copy/server_multi_thread_reID.py", line 31, in <module>
+    from control_dc import ratio #sudo chmod 666 /dev/ttyUSB0
+  File "/home/mq/Desktop/reID_copy/control_dc.py", line 4, in <module>
+    ser = serial.Serial('/dev/ttyUSB0', 9600)
+  File "/home/mq/.local/lib/python3.6/site-packages/serial/serialutil.py", line 244, in __init__
+    self.open()
+  File "/home/mq/.local/lib/python3.6/site-packages/serial/serialposix.py", line 325, in open
+    raise SerialException(msg.errno, "could not open port {}: {}".format(self._port, msg))
+serial.serialutil.SerialException: [Errno 13] could not open port /dev/ttyUSB0: [Errno 13] Permission denied: '/dev/ttyUSB0'
+Traceback (most recent call last):
+  File "/home/mq/.local/lib/python3.6/site-packages/serial/serialposix.py", line 322, in open
+    self.fd = os.open(self.portstr, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+PermissionError: [Errno 13] Permission denied: '/dev/ttyUSB0'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/mq/Desktop/reID_copy/server_multi_thread_reID.py", line 31, in <module>
+    from control_dc import ratio #sudo chmod 666 /dev/ttyUSB0
+  File "/home/mq/Desktop/reID_copy/control_dc.py", line 4, in <module>
+    ser = serial.Serial('/dev/ttyUSB0', 9600)
+  File "/home/mq/.local/lib/python3.6/site-packages/serial/serialutil.py", line 244, in __init__
+    self.open()
+  File "/home/mq/.local/lib/python3.6/site-packages/serial/serialposix.py", line 325, in open
+    raise SerialException(msg.errno, "could not open port {}: {}".format(self._port, msg))
+serial.serialutil.SerialException: [Errno 13] could not open port /dev/ttyUSB0: [Errno 13] Permission denied: '/dev/ttyUSB0'
+Traceback (most recent call last):
+  File "/home/mq/.local/lib/python3.6/site-packages/serial/serialposix.py", line 322, in open
+    self.fd = os.open(self.portstr, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+PermissionError: [Errno 13] Permission denied: '/dev/ttyUSB0'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/mq/Desktop/reID_copy/server_multi_thread_reID.py", line 31, in <module>
+    from control_dc import ratio #sudo chmod 666 /dev/ttyUSB0
+  File "/home/mq/Desktop/reID_copy/control_dc.py", line 4, in <module>
+    ser = serial.Serial('/dev/ttyUSB0', 9600)
+  File "/home/mq/.local/lib/python3.6/site-packages/serial/serialutil.py", line 244, in __init__
+    self.open()
+  File "/home/mq/.local/lib/python3.6/site-packages/serial/serialposix.py", line 325, in open
+    raise SerialException(msg.errno, "could not open port {}: {}".format(self._port, msg))
+serial.serialutil.SerialException: [Errno 13] could not open port /dev/ttyUSB0: [Errno 13] Permission denied: '/dev/ttyUSB0'
+Traceback (most recent call last):
+  File "/home/mq/.local/lib/python3.6/site-packages/serial/serialposix.py", line 322, in open
+    self.fd = os.open(self.portstr, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+PermissionError: [Errno 13] Permission denied: '/dev/ttyUSB0'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/mq/Desktop/reID_copy/server_multi_thread_reID.py", line 31, in <module>
+    from control_dc import ratio #sudo chmod 666 /dev/ttyUSB0
+  File "/home/mq/Desktop/reID_copy/control_dc.py", line 4, in <module>
+    ser = serial.Serial('/dev/ttyUSB0', 9600)
+  File "/home/mq/.local/lib/python3.6/site-packages/serial/serialutil.py", line 244, in __init__
+    self.open()
+  File "/home/mq/.local/lib/python3.6/site-packages/serial/serialposix.py", line 325, in open
+    raise SerialException(msg.errno, "could not open port {}: {}".format(self._port, msg))
+serial.serialutil.SerialException: [Errno 13] could not open port /dev/ttyUSB0: [Errno 13] Permission denied: '/dev/ttyUSB0'
+sudo: no tty present and no askpass program specified
+YOLOv5 🚀 2021-7-13 torch 1.9.0a0+gitd69c22d 
+Model Summary: 224 layers, 7266973 parameters, 0 gradients
+[ WARN:0] global /home/mq/opencv/modules/videoio/src/cap_gstreamer.cpp (1081) open OpenCV | GStreamer warning: Cannot query video position: status=0, value=-1, duration=-1
+sudo: no tty present and no askpass program specified
+sudo: no tty present and no askpass program specified
+YOLOv5 🚀 2021-7-13 torch 1.9.0a0+gitd69c22d 
+Model Summary: 224 layers, 7266973 parameters, 0 gradients
+[ WARN:0] global /home/mq/opencv/modules/videoio/src/cap_gstreamer.cpp (1081) open OpenCV | GStreamer warning: Cannot query video position: status=0, value=-1, duration=-1
+YOLOv5 🚀 2021-7-13 torch 1.9.0a0+gitd69c22d 
+Model Summary: 224 layers, 7266973 parameters, 0 gradients
+[ WARN:0] global /home/mq/opencv/modules/videoio/src/cap_gstreamer.cpp (1081) open OpenCV | GStreamer warning: Cannot query video position: status=0, value=-1, duration=-1
+YOLOv5 🚀 2021-7-13 torch 1.9.0a0+gitd69c22d 
+Model Summary: 224 layers, 7266973 parameters, 0 gradients
+[ WARN:0] global /home/mq/opencv/modules/videoio/src/cap_gstreamer.cpp (2057) handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module v4l2src0 reported: Could not open device '/dev/video0' for reading and writing.
+[ WARN:0] global /home/mq/opencv/modules/videoio/src/cap_gstreamer.cpp (1034) open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0] global /home/mq/opencv/modules/videoio/src/cap_gstreamer.cpp (597) isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0] global /home/mq/opencv/modules/videoio/src/cap_v4l.cpp (890) open VIDEOIO(V4L2:/dev/video0): can't open camera by index
+[ERROR:0] global /home/mq/opencv/modules/videoio/src/cap.cpp (589) open VIDEOIO(GSTREAMER): raised OpenCV exception:
+
+OpenCV(4.5.3) /home/mq/opencv/modules/videoio/src/cap_gstreamer.cpp:1592: error: (-215:Assertion failed) frameSize.width > 0 && frameSize.height > 0 in function 'open'
+
+
+/home/mq/Desktop/reID_copy/server_multi_thread_reID.py:322: YAMLLoadWarning: calling yaml.load() without Loader=... is deprecated, as the default Loader is unsafe. Please read https://msg.pyyaml.org/load for full details.
+  config = yaml.load(stream)
+/usr/local/lib/python3.6/dist-packages/torchvision/transforms/transforms.py:281: UserWarning: Argument interpolation should be of type InterpolationMode instead of int. Please, use InterpolationMode enum.
+  "Argument interpolation should be of type InterpolationMode instead of int. "
+ratio_start
+use_gpu :  True
+=================Loading models yolov5=================
+Fusing layers... 
+time load model yolo :  13.69867992401123
+ft_ResNet50
+=================Loading models ft_ResNet50=================
+time load model ft_ResNet50 :  1.3200137615203857
+Loaded models in 18.871 s
+Error reading video file
+Starting thread
+==================================start threading socket==================================
+Starting convert
+==================================start detect object==================================
+YOLOv5 🚀 2021-7-13 torch 1.9.0a0+gitd69c22d 
+Model Summary: 224 layers, 7266973 parameters, 0 gradients
+[ WARN:0] global /home/mq/opencv/modules/videoio/src/cap_gstreamer.cpp (1081) open OpenCV | GStreamer warning: Cannot query video position: status=0, value=-1, duration=-1
