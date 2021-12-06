@@ -4,6 +4,7 @@ import numpy as np
 import zmq
 import socket
 import pickle
+import time
 from random import randint
 # from constants import PORT
 from utilss import string_to_image
@@ -18,7 +19,7 @@ class StreamViewer:
         self.footage_socket.bind('tcp://*:5555')
         self.footage_socket.setsockopt_string(zmq.SUBSCRIBE, np.unicode(''))
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.connect(('192.168.0.103', 8000))
+        self.s.connect(('192.168.0.102', 8000))
         self.display = True
         self.current_frame = None
         self.keep_running = True
@@ -31,11 +32,16 @@ class StreamViewer:
             # print(self.footage_socket)
             try:
                 # print('try')
-                print('2')
+                # print('2')
                 frame = self.footage_socket.recv_string()
                 # print('1')
-                print('fname', frame)
+                # print('fname', frame)
                 self.current_frame = string_to_image(frame)
+                high, weight = self.current_frame.shape[:2]
+                # print('********************')
+                # print(high, weight)
+                # print('********************')
+                # self.current_frame = cv2.resize(self.current_frame, (high/2,weight/2))
 
                 bboxes = []
                 colors = []
@@ -72,8 +78,8 @@ class StreamViewer:
                         elif data_rec.decode() == 'close':
                             print('---------------elif---------------close')
                             # data=pickle.dumps([1])
-                            self.s.sendall('close'.encode())
-                            self.s.close()
+                            # self.s.sendall('close'.encode())
+                            # self.s.close()
                             cv2.destroyAllWindows()
                             break
                         else:
@@ -82,13 +88,20 @@ class StreamViewer:
                             # self.s.sendall('close'.encode())
                 else:
                     cv2.imshow("Stream", self.current_frame)
-                    self.s.close()
-                    cv2.waitKey(1)
+                    # self.s.close()
+                    p = cv2.waitKey(1)
+                    if (p == 113):  # q is pressed
+                        self.s.sendall('close'.encode())
+                        print('---------------gui xong close----')
+                        time.sleep(2)
+                        break  
                 # print('done-----------------------------')
             except KeyboardInterrupt:
+
                 cv2.destroyAllWindows()
                 break
-            print('-------------------', self.keep_running)
+            # print('-------------------', self.keep_running)
+        # self.s.close()
         print("Streaming Stopped!")
 
     def stop(self):
@@ -116,3 +129,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
