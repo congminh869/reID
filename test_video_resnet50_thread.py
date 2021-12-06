@@ -24,31 +24,40 @@ import zmq
 import socket
 import pickle
 import base64
+from threading import Thread,Lock
+import threading
+mutex = Lock()
 
-from control_dc import ratio
+from control_dc import ratio #sudo chmod 666 /dev/ttyUSB0
+ratio(0)
 
-def camera_ratio(x,y):
-	a = 10
-	thres_min = 320 - a
-	thres_max = 320 + a
-	if x>=thres_max and y>=thres_min and y<=thres_max: # right
+def camera_ratio(x,y,high, weight):
+	a = 30
+	thres_min_x = weight/2 - a
+	thres_max_x = weight/2 + a
+	thres_min_y = high/2 - a
+	thres_max_y = high/2 + a
+
+	if x>=thres_max_x and y>=thres_min_y and y<=thres_max_y: # right
 		return 2
-	elif x>=thres_min and x<=thres_max and y<=thres_min: #up
+	elif x>=thres_min_x and x<=thres_max_x and y<=thres_min_y: #up
 		return 3
-	elif x<=thres_min and y>=thres_min and y<=thres_max:#left
+	elif x<=thres_min_x and y>=thres_min_y and y<=thres_max_y:#left
 		return 1
-	elif x>=thres_min and x<=thres_max and y>=thres_max:#down
+	elif x>=thres_min_x and x<=thres_max_x and y>=thres_max_y:#down
 		return 4
-	elif x<=thres_min and y>=thres_max:	#left down
+	elif x<=thres_min_x and y>=thres_max_y:	#left down
 		return 6
-	elif x>=thres_max and y>=thres_max:	#down right
+	elif x>=thres_max_x and y>=thres_max_y:	#down right
 		return 8
-	elif x>=thres_max and y<=thres_min:	#right up
+	elif x>=thres_max_x and y<=thres_min_y:	#right up
 		return 7
-	elif x<=thres_min and y<=thres_min:#up left
+	elif x<=thres_min_x and y<=thres_min_y:#up left
 		return 5
-	elif x>=thres_min and x<=thres_max and y>=thres_min and y<=thres_max:#stop
+	else:
 		return 9
+	# elif x>=thres_min_x and x<=thres_max_x and y>=thres_min_y and y<=thres_max_y:#stop
+	# 	return 9
 
 def detect_obj(model, stride, names, img_detect = '', iou_thres = 0.4, conf_thres = 0.5, img_size = 640):
 	global check_select_person
@@ -56,6 +65,9 @@ def detect_obj(model, stride, names, img_detect = '', iou_thres = 0.4, conf_thre
 
 	imgsz = img_size
 	high, weight = img_detect.shape[:2]
+	# print('********************')
+	# print(high, weight)
+	# print('********************')
 	check = False
 	#####################################
 	classify = False
@@ -83,7 +95,7 @@ def detect_obj(model, stride, names, img_detect = '', iou_thres = 0.4, conf_thre
 	t1 = time.time()
 	pred = model(im0, augment= augment)[0]
 	t2 = time.time()
-	print('---------------------------------time detect : ', t2 - t1)
+	# print('time detect : ', t2 - t1)
 	# Apply NMS
 	classes = None
 	pred = non_max_suppression(pred, conf_thres, iou_thres, classes = classes, agnostic=agnostic_nms)
@@ -118,103 +130,150 @@ def detect_obj(model, stride, names, img_detect = '', iou_thres = 0.4, conf_thre
 					t3 = time.time()
 					id_person = obj_track.track(img_crop)
 					t4 = time.time()
-					print('time tracking   : ', t4 - t3)
+					# print('time tracking   : ', t4 - t3)
 					if id_person:
-						signal = camera_ratio(x_center,y_center)
+						signal = camera_ratio(x_center,y_center, high, weight)
 						text_signal = ['left', 'right', 'up', 'down', 'left+up', 'left+down', 'right+up', 'right+down', 'stop']
 						cv2.rectangle(img_detect, c1, c2, (0,0,255), 2)
 						cv2.rectangle(img_detect, (x_center,y_center), (x_center+2,y_center+2), (0,0,255), 2)
 						ratio(signal)
-						cv2.putText(img_detect,text_signal[signal-1], (x_center,y_center), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
-			
-					# cv2.imshow('frame ', img_detect)
+						text_ratio = '('+str(x_center)+ ',' +str(y_center) + ') ' + text_signal[signal-1]
+						cv2.putText(img_detect, text_ratio , (x_center,y_center), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+						cv2.putText(img_detect, '('+str(high)+','+str(weight)+')' , (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
 	if check_select_person:
-		# print('bat dau chon nguoi')
+		print('check_select_person')
 		point_person = Select_person(img_detect, np.array(points))
 		x1_pp, y1_pp, x2_pp, y2_pp = point_person
 		feature_person = img_detect[y1_pp:y2_pp, x1_pp:x2_pp]
+		print('update frame', point_person)
 		obj_track.update(feature_person )	
-	# print('Processing time %0.3f s'%(time.time()-t))
 	return img_detect
 
-def Select_person(img_detect, points):
-	global check_select_person
-	global names
-	for point in points:
-		x1,y1,x2,y2 = point
-		cv2.rectangle(img_detect, (x1,y1), (x2,y2), (0,0,255), 2)
-	bboxes = []
-	
-	#khoi tao socket
+def thread_socket():
+	print('==================================start threading socket==================================')
+	global rec_done,_close,bboxesT,clinet_connect,check_select_person
+	_close = False
+	rec_done = False
+	clinet_connect = False
 
-	frame = img_detect
+	# frame = img_detect
 	HOST = '0.0.0.0'
 	PORT = 8000
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)      
 	s.bind((HOST, PORT))
 	s.listen()
 
-	print('check socket')
-	conn, addr = s.accept()
-	print('{} connected.'.format(addr))
-	conn.sendall(b'chon anh')
+	print('wait connect socket from client')
+	count_c = 0
+	check_close = True
+	while True:
+		print('count_c : ',count_c)
+		if check_close:
+			conn, addr = s.accept()
+			check_close = False
+		print('+++++++++reconnected {} connected. +++++++++++'.format(addr))
+		mutex:acquire()
+		check_select_person = True
+		mutex:release()
+		clinet_connect = True
+		conn.sendall(b'chon anh')
+		time.sleep(5)
+		print('line ******1******* ')
+		data_recv = conn.recv(1024)
+		print(data_recv)
+		print('line ******2******* ')
+		print('Start listening...')
+
+		print('data_recv ',data_recv)
+		if data_recv == b'close':
+			print('------------Gui------close')
+			check_select_person = True
+			check_close = True
+			# conn.sendall('close'.encode())
+			check_close = True
+			# break
+		# elif data_recv == b'done':
+		else:
+			print('-----------nhan kich thuoc-------close')
+			data = pickle.loads(data_recv)
+			print(data)
+			print(type(data))
+			# mutex:release()
+			conn.sendall('close'.encode())
+			print('continue----thread')
+			bboxesT = data 
+			rec_done = True
+		print('-----------doi offff++++++++++++++++++++++++++++++')
+		count_c +=1
+
+	print('da dong socket')
+        
+	# s.close()
+	# conn.close()
+
+def Select_person(img_detect, points):
+	global check_select_person, clinet_connect,bboxesT,data1
+	global rec_done,_close
+	global names
+	for point in points:
+		x1,y1,x2,y2 = point
+		cv2.rectangle(img_detect, (x1,y1), (x2,y2), (0,0,255), 2)
+	bboxes = []
 
 	check = True
 	count = 0
-
-	bboxes = []
-
 	while True:
-	    encoded, buffer = cv2.imencode('.jpg', frame)
-	        #cv2.imshow('abc', )
-	    jpg_as_text = base64.b64encode(buffer)
-	    footage_socket.send(jpg_as_text)
+		#dung lai cho den khi client connect
+		if clinet_connect:
+			print('--------------ennable client')
+			break
+	while True:
+		print('-----ennable client-----',clinet_connect)
+		# high, weight = img_detect.shape[:2]
+		# img_detect = cv2.resize(img_detect, (high/2,weight/2))
+		encoded, buffer = cv2.imencode('.jpg', img_detect)
+		jpg_as_text = base64.b64encode(buffer)
+		footage_socket.send(jpg_as_text)
 
-	    k = cv2.waitKey(1) & 0xFF
-	    count +=1
-	    print('time.sleep(5) , count = ', count)
-	    if check:
-	        time.sleep(2)
-	    if count >= 3:
-	        if check:
-	            print('Start listening...')
-	            data_recv = conn.recv(1024)
-	            print(data_recv)
-	            if data_recv == b'close':
-	                print('------------------close')
-	                k=113
-	                check=False
-	                s.close()
-	                conn.close()
-	                  # conn.sendall(b'close')
-	                  # break
-	            else:
-	                data = pickle.loads(data_recv)
-	                #data = data_recv.decode()
-	                print(data)
-	                print(type(data))
-	                conn.sendall('close'.encode())
-	                box = data
-	                print('continue')
-	            # k=113
-	            # continue
-	            bboxes = data#.append(box)
-	    print('k = ', k)
-	    if (k == 113):  # q is pressed
-	      break
+		k = cv2.waitKey(1) & 0xFF
+		count +=1
+		print('time.sleep(5) , count = ', count)
+		if check:
+			time.sleep(2)
+		if count >= 3:
+			if check:
+				while True:
+					if _close:
+						print('-------turn off-------close')
+						k=113
+						check=False
+						_close = False
+						rec_done = False
+						break
+					# else:
+					elif rec_done == True:
+						#data = pickle.loads(data_recv)
+						bboxes = bboxesT
+						print('---Nhan anh deted xong')
+						_close = True
+						print('continue')
+			
+			if (k == 113):  # q is pressed
+				print('k = ', k)
+				break
 
-	print('Selected bounding boxes {}'.format(bboxes))
+	# print('Selected bounding boxes {}'.format(bboxes))
 
 	for gt_bbox_xywh in bboxes:
 		gt_bbox = (gt_bbox_xywh[0], gt_bbox_xywh[1], gt_bbox_xywh[0] + gt_bbox_xywh[2], gt_bbox_xywh[1] + gt_bbox_xywh[3])
-		print('gt_bbox : ', gt_bbox)
+		# print('gt_bbox : ', gt_bbox)
 
 		iou, iou_max, nmax = get_max_iou(points, gt_bbox)
 
 		point_person =points[iou.argmax(axis=0)]
-		print('point_person : ', point_person)
-		print('points : ',points)
+		# print('point_person : ', point_person)
+		# print('points : ',points)
 	check_select_person = False
 	return point_person
 
@@ -223,7 +282,7 @@ if __name__ == '__main__':
 	check_select_person = True
 	index_ids = None
 	feature_person = None
-
+	clinet_connect = False
 	context = zmq.Context()
 	footage_socket = context.socket(zmq.PUB)
 	footage_socket.connect('tcp://192.168.0.101:5555')
@@ -237,7 +296,7 @@ if __name__ == '__main__':
 	device = ''
 	update = True
 	# Load model yolo
-	print('=================Loading models=================')
+	print('=================Loading models yolov5=================')
 	t1 = time.time()
 	set_logging()
 	device = select_device(device)
@@ -253,7 +312,6 @@ if __name__ == '__main__':
 	t2 = time.time()
 	print('time load model yolo : ', t2-t1)
 
-
 	#Load model tracking person
 	config_path = './model/ft_ResNet50/opts1.yaml'# path config
 	with open(config_path, 'r') as stream:
@@ -267,7 +325,6 @@ if __name__ == '__main__':
 	#which_epoch = opt.which_epoch
 	gpu_ids = ['cuda:0']
 	ms = [1]
-
 	# set gpu ids
 	if len(gpu_ids)>0 and torch.cuda.is_available():
 		torch.cuda.set_device(gpu_ids[0])
@@ -282,7 +339,7 @@ if __name__ == '__main__':
 		print('ft_ResNet50')
 		model_structure = ft_net(nclasses, stride = stride)
 
-
+		print('=================Loading models ft_ResNet50=================')
 	t3 = time.time()
 	model_track = load_network(model_structure,'./model/ft_ResNet50/net_last_minh.pth')
 	t4 = time.time()
@@ -298,49 +355,65 @@ if __name__ == '__main__':
 		model_track = model_track.cuda()
 	print('Loaded models in %0.3f s'%(time.time()-t1))
 	# Load feature from data
-	print('=================Loading data=================')
 	transImage = transforms.Compose([transforms.ToPILImage(),
 		transforms.Resize((256, 128), interpolation=3),
 		transforms.ToTensor(),
 		transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 	#load tracking 
 	obj_track = FEATURE_IMG(model_track)
+
 	# MAIN
-	cap = cv2.VideoCapture(0)
+	cap = cv2.VideoCapture(2)
 	width, height = (0, 0)
 	if (cap.isOpened() == False): 
 		print("Error reading video file")
-	frame_width = int(640)
-	frame_height = int(640)
+	frame_width = int(cap.get(3))
+	frame_height = int(cap.get(4))
 	size = (frame_width, frame_height)
 	result = cv2.VideoWriter('filename_1thread.avi',\
 							cv2.VideoWriter_fourcc(*'MJPG'),10, size)
+
+
+	#Starting 
+	print('Starting thread')
+	thread1 = threading.Thread(name='thread_socket', target = thread_socket)
+	thread1.start()
 	print('Starting convert')
 	count = 0
-	while(cap.isOpened()):
-		# Capture frame-by-frame
-		ret, frame = cap.read()
-		if ret == True:
-			# Display the resulting frame
-			t7 = time.time()
-			frame = cv2.resize(frame, (640,640)) 
-			frame = detect_obj(model, stride, names, img_detect = frame, iou_thres = 0.4, conf_thres = 0.5, img_size = 320)
-			encoded, buffer = cv2.imencode('.jpg', frame)
-			#cv2.imshow('abc', )
-			jpg_as_text = base64.b64encode(buffer)
-			footage_socket.send(jpg_as_text)
-			t8 = time.time()
-			print('time total ----------------------------------------------------------------------',t8-t7)
-			# print(frame.shape[:2])
-			count+= 1
-			if count % 100==0:
-				print(count)
-			result.write(frame)
-			if cv2.waitKey(25) & 0xFF == ord('q'):
+	print('==================================start detect object==================================')
+	try:
+		while(cap.isOpened()):
+			# Capture frame-by-frame
+			ret, frame = cap.read()
+			if ret == True:
+				# Display the resulting frame
+				t7 = time.time()
+				# frame = cv2.resize(frame, (640,640)) 
+				frame = detect_obj(model, stride, names, img_detect = frame, iou_thres = 0.4, conf_thres = 0.5, img_size = 320)
+				frame_wwrite = frame
+				if check_select_person == False:
+					high, weight = frame.shape[:2]
+					w = int(weight/2)
+					h = int(high/2)
+					frame = cv2.resize(frame, (frame_width,frame_height))
+					encoded, buffer = cv2.imencode('.jpg', frame)
+					#cv2.imshow('abc', )
+					jpg_as_text = base64.b64encode(buffer)
+					footage_socket.send(jpg_as_text)
+				t8 = time.time()
+				# print('time total ----------------------------------------------------------------------',t8-t7)
+				# print(frame.shape[:2])
+				count+= 1
+				if count % 100==0:
+					print(count)
+				result.write(frame_wwrite)
+				if cv2.waitKey(25) & 0xFF == ord('q'):
+					break
+			# Break the loop
+			else:
 				break
-		# Break the loop
-		else:
-			break
-	cap.release()
-	out.release()
-	cv2.destroyAllWindows()
+	except KeyboardInterrupt:
+		cv2.destroyAllWindows()
+		cap.release()
+		result.release()
+	# cv2.destroyAllWindows()
