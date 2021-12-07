@@ -31,8 +31,10 @@ mutex = Lock()
 from control_dc import ratio #sudo chmod 666 /dev/ttyUSB0
 ratio(0)
 
+IP_HOST_CLIENT = '192.168.6.54'
+
 def camera_ratio(x,y,high, weight):
-	a = 50
+	a = 40
 	thres_min_x = weight/2 - a
 	thres_max_x = weight/2 + a
 	thres_min_y = high/2 - a
@@ -60,8 +62,12 @@ def camera_ratio(x,y,high, weight):
 	# 	return 9
 
 def detect_obj(model, stride, names, img_detect = '', iou_thres = 0.4, conf_thres = 0.5, img_size = 640):
-	global check_select_person
+	global check_select_person, footage_socket
 	global feature_person
+
+	context = zmq.Context()
+	footage_socket = context.socket(zmq.PUB)
+	footage_socket.connect('tcp://'+IP_HOST_CLIENT+':5555')
 
 	imgsz = img_size
 	high, weight = img_detect.shape[:2]
@@ -148,11 +154,21 @@ def detect_obj(model, stride, names, img_detect = '', iou_thres = 0.4, conf_thre
 		feature_person = img_detect[y1_pp:y2_pp, x1_pp:x2_pp]
 		print('update frame', point_person)
 		obj_track.update(feature_person )	
+
+
+	frame = img_detect
+	w = int(weight/2)
+	h = int(high/2)
+	frame = cv2.resize(frame, (w,h))
+	encoded, buffer = cv2.imencode('.jpg', frame)
+	#cv2.imshow('abc', )
+	jpg_as_text = base64.b64encode(buffer)
+	footage_socket.send(jpg_as_text)
 	return img_detect
 
 def thread_socket():
 	print('==================================start threading socket==================================')
-	global rec_done,_close,bboxesT,clinet_connect,check_select_person
+	global rec_done,_close,bboxesT,clinet_connect,check_select_person, footage_socket
 	_close = False
 	rec_done = False
 	clinet_connect = False
@@ -213,7 +229,7 @@ def thread_socket():
 	# conn.close()
 
 def Select_person(img_detect, points):
-	global check_select_person, clinet_connect,bboxesT,data1
+	global check_select_person, clinet_connect,bboxesT,data1, footage_socket
 	global rec_done,_close
 	global names
 	for point in points:
@@ -273,11 +289,17 @@ def Select_person(img_detect, points):
 
 		print('===============')
 		print(iou)
+		print(iou.argmax(axis=0))
 		print('===============')
 
 		point_person =points[iou.argmax(axis=0)]
+
+		print('********************************')
+		print('points : ', points)
 		print('point_person : ', point_person)
 		print('points : ',points)
+		print('********************************')
+
 	check_select_person = False
 	return point_person
 
@@ -287,9 +309,6 @@ if __name__ == '__main__':
 	index_ids = None
 	feature_person = None
 	clinet_connect = False
-	context = zmq.Context()
-	footage_socket = context.socket(zmq.PUB)
-	footage_socket.connect('tcp://192.168.0.101:5555')
 
 
 	use_gpu = torch.cuda.is_available()
@@ -368,14 +387,14 @@ if __name__ == '__main__':
 
 	# MAIN
 	cap = cv2.VideoCapture(0)
-	width, height = (0, 0)
-	if (cap.isOpened() == False): 
-		print("Error reading video file")
-	frame_width = int(cap.get(3))
-	frame_height = int(cap.get(4))
-	size = (frame_width, frame_height)
-	result = cv2.VideoWriter('filename_1thread.avi',\
-							cv2.VideoWriter_fourcc(*'MJPG'),10, size)
+	# width, height = (0, 0)
+	# if (cap.isOpened() == False): 
+	# 	print("Error reading video file")
+	# frame_width = int(cap.get(3))
+	# frame_height = int(cap.get(4))
+	# size = (frame_width, frame_height)
+	# result = cv2.VideoWriter('filename_1thread.avi',\
+	# 						cv2.VideoWriter_fourcc(*'MJPG'),10, size)
 
 
 	#Starting 
@@ -385,39 +404,41 @@ if __name__ == '__main__':
 	print('Starting convert')
 	count = 0
 	print('==================================start detect object==================================')
+	# count_frame = 0
 	try:
 		while(cap.isOpened()):
 			# Capture frame-by-frame
 			ret, frame = cap.read()
 			if ret == True:
 				# Display the resulting frame
-				t7 = time.time()
-				# frame = cv2.resize(frame, (640,640)) 
-				frame = detect_obj(model, stride, names, img_detect = frame, iou_thres = 0.4, conf_thres = 0.5, img_size = 320)
-				frame_wwrite = frame
-				if check_select_person == False:
-					high, weight = frame.shape[:2]
-					w = int(weight/2)
-					h = int(high/2)
-					frame = cv2.resize(frame, (w,h))
-					encoded, buffer = cv2.imencode('.jpg', frame)
-					#cv2.imshow('abc', )
-					jpg_as_text = base64.b64encode(buffer)
-					footage_socket.send(jpg_as_text)
-				t8 = time.time()
-				# print('time total ----------------------------------------------------------------------',t8-t7)
-				# print(frame.shape[:2])
-				count+= 1
-				if count % 100==0:
-					print(count)
-				result.write(frame_wwrite)
-				if cv2.waitKey(25) & 0xFF == ord('q'):
-					break
+				if True:
+					t7 = time.time()
+					# frame = cv2.resize(frame, (640,640)) 
+					frame = detect_obj(model, stride, names, img_detect = frame, iou_thres = 0.4, conf_thres = 0.5, img_size = 320)
+					frame_wwrite = frame
+					# if check_select_person == False:
+					# 	high, weight = frame.shape[:2]
+					# 	w = int(weight/2)
+					# 	h = int(high/2)
+					# 	frame = cv2.resize(frame, (w,h))
+					# 	encoded, buffer = cv2.imencode('.jpg', frame)
+					# 	#cv2.imshow('abc', )
+					# 	jpg_as_text = base64.b64encode(buffer)
+					# 	footage_socket.send(jpg_as_text)
+					t8 = time.time()
+					# print('time total ----------------------------------------------------------------------',t8-t7)
+					# print(frame.shape[:2])
+					count+= 1
+					if count % 100==0:
+						print(count)
+					# result.write(frame_wwrite)
+					if cv2.waitKey(25) & 0xFF == ord('q'):
+						break
 			# Break the loop
 			else:
 				break
 	except KeyboardInterrupt:
 		cv2.destroyAllWindows()
 		cap.release()
-		result.release()
+		# result.release()
 	# cv2.destroyAllWindows()
