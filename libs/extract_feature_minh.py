@@ -56,7 +56,7 @@ class FEATURE_IMG():
 		# img_ps = self.img_feature(person_select)
 		# a = self.person_selectview(-1, 1)
 		score = torch.mm(img_c, self.person_select.view(-1, 1))
-		print('score : ', score)
+		# print('score : ', score)
 		if score.item() > 0.6:
 			# self.person_select = img_c
 			# print('True : ', score)
