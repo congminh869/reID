@@ -11,7 +11,7 @@ from utilss import string_to_image
 
 #PORT = '8888'
 
-IP_CONNECT_SERVER = '192.168.6.52'
+IP_CONNECT_SERVER = '10.42.0.1'
 
 def receive_stream(display=True):
     print('start--------------------init')
