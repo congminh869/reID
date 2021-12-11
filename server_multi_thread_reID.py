@@ -13,7 +13,7 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 from utils.datasets import letterbox
 import os
 import yaml
-from libs.extract_feature_minh import FEATURE_IMG, load_network
+from libs.extract_feature_minh import FEATURE_IMG, load_network, FEATURE_IMG_PCB
 from libs.models import ft_net, ft_net_dense, ft_net_NAS, PCB, PCB_test
 import torch.nn as nn
 import scipy.io
@@ -31,7 +31,7 @@ mutex = Lock()
 from control_dc import ratio #sudo chmod 666 /dev/ttyUSB0
 ratio(0)
 
-IP_HOST_CLIENT = '192.168.6.54'
+IP_HOST_CLIENT = ''
 
 def camera_ratio(x,y,high, weight):
 	a = 40
@@ -65,10 +65,6 @@ def detect_obj(model, stride, names, img_detect = '', iou_thres = 0.4, conf_thre
 	global check_select_person, footage_socket
 	global feature_person
 
-	context = zmq.Context()
-	footage_socket = context.socket(zmq.PUB)
-	footage_socket.connect('tcp://'+IP_HOST_CLIENT+':5555')
-
 	imgsz = img_size
 	high, weight = img_detect.shape[:2]
 	# print('********************')
@@ -101,7 +97,7 @@ def detect_obj(model, stride, names, img_detect = '', iou_thres = 0.4, conf_thre
 	t1 = time.time()
 	pred = model(im0, augment= augment)[0]
 	t2 = time.time()
-	# print('time detect : ', t2 - t1)
+	print('time detect : ', t2 - t1)
 	# Apply NMS
 	classes = None
 	pred = non_max_suppression(pred, conf_thres, iou_thres, classes = classes, agnostic=agnostic_nms)
@@ -136,12 +132,12 @@ def detect_obj(model, stride, names, img_detect = '', iou_thres = 0.4, conf_thre
 					t3 = time.time()
 					id_person = obj_track.track(img_crop)
 					t4 = time.time()
-					# print('time tracking   : ', t4 - t3)
+					print('time tracking   : ', t4 - t3)
 					if id_person:
 						signal = camera_ratio(x_center,y_center, high, weight)
 						text_signal = ['left', 'right', 'up', 'down', 'left+up', 'left+down', 'right+up', 'right+down', 'stop']
-						cv2.rectangle(img_detect, c1, c2, (0,0,255), 2)
-						cv2.rectangle(img_detect, (x_center,y_center), (x_center+2,y_center+2), (0,0,255), 2)
+						cv2.rectangle(img_detect, c1, c2, (240,248,255), 2)
+						cv2.rectangle(img_detect, (x_center,y_center), (x_center+2,y_center+2), (240,248,255), 2)
 						ratio(signal)
 						text_ratio = '('+str(x_center)+ ',' +str(y_center) + ') ' + text_signal[signal-1]
 						cv2.putText(img_detect, text_ratio , (x_center,y_center), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
@@ -157,8 +153,8 @@ def detect_obj(model, stride, names, img_detect = '', iou_thres = 0.4, conf_thre
 
 
 	frame = img_detect
-	w = int(weight/2)
-	h = int(high/2)
+	w = int(weight)
+	h = int(high)
 	frame = cv2.resize(frame, (w,h))
 	encoded, buffer = cv2.imencode('.jpg', frame)
 	#cv2.imshow('abc', )
@@ -168,10 +164,13 @@ def detect_obj(model, stride, names, img_detect = '', iou_thres = 0.4, conf_thre
 
 def thread_socket():
 	print('==================================start threading socket==================================')
-	global rec_done,_close,bboxesT,clinet_connect,check_select_person, footage_socket
+	global rec_done,_close,bboxesT,clinet_connect,check_select_person, footage_socket, IP_HOST_CLIENT
 	_close = False
 	rec_done = False
 	clinet_connect = False
+
+	context = zmq.Context()
+	footage_socket = context.socket(zmq.PUB)
 
 	# frame = img_detect
 	HOST = '0.0.0.0'
@@ -180,14 +179,16 @@ def thread_socket():
 	s.bind((HOST, PORT))
 	s.listen()
 
-	print('wait connect socket from client')
 	count_c = 0
 	check_close = True
 	while True:
-		print('count_c : ',count_c)
+		print('wait connect socket from client')
 		if check_close:
 			conn, addr = s.accept()
 			check_close = False
+			IP_HOST_CLIENT = addr[0]
+		if IP_HOST_CLIENT != '':
+			footage_socket.connect('tcp://'+IP_HOST_CLIENT+':5555')
 		print('+++++++++reconnected {} connected. +++++++++++'.format(addr))
 		mutex:acquire()
 		check_select_person = True
@@ -196,37 +197,26 @@ def thread_socket():
 		conn.sendall(b'chon anh')
 		time.sleep(5)
 		print('line ******1******* ')
-		data_recv = conn.recv(1024)
-		print(data_recv)
-		print('line ******2******* ')
-		print('Start listening...')
-
-		print('data_recv ',data_recv)
-		if data_recv == b'close':
-			print('------------Gui------close')
+		
+		try:
+			data_recv = conn.recv(1024)
+			print(data_recv)
+		except Exception as e:
 			check_select_person = True
 			check_close = True
-			# conn.sendall('close'.encode())
+			continue
+
+		if data_recv == b'close':
+			check_select_person = True
 			check_close = True
-			# break
-		# elif data_recv == b'done':
 		else:
-			print('-----------nhan kich thuoc-------close')
 			data = pickle.loads(data_recv)
 			print(data)
 			print(type(data))
-			# mutex:release()
 			conn.sendall('close'.encode())
-			print('continue----thread')
 			bboxesT = data 
 			rec_done = True
-		print('-----------doi offff++++++++++++++++++++++++++++++')
 		count_c +=1
-
-	print('da dong socket')
-        
-	# s.close()
-	# conn.close()
 
 def Select_person(img_detect, points):
 	global check_select_person, clinet_connect,bboxesT,data1, footage_socket
@@ -279,26 +269,10 @@ def Select_person(img_detect, points):
 				print('k = ', k)
 				break
 
-	# print('Selected bounding boxes {}'.format(bboxes))
-
 	for gt_bbox_xywh in bboxes:
 		gt_bbox = (gt_bbox_xywh[0], gt_bbox_xywh[1], gt_bbox_xywh[0] + gt_bbox_xywh[2], gt_bbox_xywh[1] + gt_bbox_xywh[3])
-		# print('gt_bbox : ', gt_bbox)
-
 		iou, iou_max, nmax = get_max_iou(points, gt_bbox)
-
-		print('===============')
-		print(iou)
-		print(iou.argmax(axis=0))
-		print('===============')
-
 		point_person =points[iou.argmax(axis=0)]
-
-		print('********************************')
-		print('points : ', points)
-		print('point_person : ', point_person)
-		print('points : ',points)
-		print('********************************')
 
 	check_select_person = False
 	return point_person
@@ -336,15 +310,18 @@ if __name__ == '__main__':
 	print('time load model yolo : ', t2-t1)
 
 	#Load model tracking person
-	config_path = './model/ft_ResNet50/opts1.yaml'# path config
+	name_model =  'fp16' #'ft_net_dense'
+	config_path = './model/'+name_model+'/opts.yaml'# path config
 	with open(config_path, 'r') as stream:
 	  config = yaml.load(stream)
 
 	use_dense = config['use_dense']
 	use_NAS = config['use_NAS']
+	use_PCB = config['PCB']
+	# use_fp16 = config['fp16'] 
 	stride = config['stride']
 	nclasses = config['nclasses']
-	batchsize = 256
+	# batchsize = 256
 	#which_epoch = opt.which_epoch
 	gpu_ids = ['cuda:0']
 	ms = [1]
@@ -353,23 +330,28 @@ if __name__ == '__main__':
 		torch.cuda.set_device(gpu_ids[0])
 		cudnn.benchmark = True
 	if use_dense:
-		# print('use_dense')
+		print(name_model)
 		model_structure = ft_net_dense(nclasses)
 	elif use_NAS:
 		# print('use_NAS')
 		model_structure = ft_net_NAS(nclasses)
+	elif use_PCB:
+		model_structure = PCB(nclasses)
 	else:
-		print('ft_ResNet50')
+		print(name_model)
 		model_structure = ft_net(nclasses, stride = stride)
 
-		print('=================Loading models ft_ResNet50=================')
+		print('=================Loading models '+name_model+'=================')
 	t3 = time.time()
-	model_track = load_network(model_structure,'./model/ft_ResNet50/net_last_minh.pth')
+	model_track = load_network(model_structure,'./model/'+name_model+'/net_last.pth')
 	t4 = time.time()
 
-	print('time load model ft_ResNet50 : ', t4-t3)
+	print('time load model '+name_model+' : '+ str(t4-t3))
 	# Remove the final fc layer and classifier layer
-	model_track.classifier.classifier = nn.Sequential()
+	if use_PCB:
+		model_track = PCB_test(model_track)
+	else:
+		model_track.classifier.classifier = nn.Sequential()
 
 	# Change to test mode
 	model_track = model_track.eval()
@@ -377,27 +359,11 @@ if __name__ == '__main__':
 	if use_gpu:
 		model_track = model_track.cuda()
 	print('Loaded models in %0.3f s'%(time.time()-t1))
-	# Load feature from data
-	transImage = transforms.Compose([transforms.ToPILImage(),
-		transforms.Resize((256, 128), interpolation=3),
-		transforms.ToTensor(),
-		transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 	#load tracking 
-	obj_track = FEATURE_IMG(model_track)
+	obj_track = FEATURE_IMG(model_track)#FEATURE_IMG_PCB(model_track)
 
 	# MAIN
-	cap = cv2.VideoCapture(0)
-	# width, height = (0, 0)
-	# if (cap.isOpened() == False): 
-	# 	print("Error reading video file")
-	# frame_width = int(cap.get(3))
-	# frame_height = int(cap.get(4))
-	# size = (frame_width, frame_height)
-	# result = cv2.VideoWriter('filename_1thread.avi',\
-	# 						cv2.VideoWriter_fourcc(*'MJPG'),10, size)
-
-
-	#Starting 
+	cap = cv2.VideoCapture('./data/filename_1thread.avi')
 	print('Starting thread')
 	thread1 = threading.Thread(name='thread_socket', target = thread_socket)
 	thread1.start()
@@ -416,29 +382,15 @@ if __name__ == '__main__':
 					# frame = cv2.resize(frame, (640,640)) 
 					frame = detect_obj(model, stride, names, img_detect = frame, iou_thres = 0.4, conf_thres = 0.5, img_size = 320)
 					frame_wwrite = frame
-					# if check_select_person == False:
-					# 	high, weight = frame.shape[:2]
-					# 	w = int(weight/2)
-					# 	h = int(high/2)
-					# 	frame = cv2.resize(frame, (w,h))
-					# 	encoded, buffer = cv2.imencode('.jpg', frame)
-					# 	#cv2.imshow('abc', )
-					# 	jpg_as_text = base64.b64encode(buffer)
-					# 	footage_socket.send(jpg_as_text)
 					t8 = time.time()
-					# print('time total ----------------------------------------------------------------------',t8-t7)
-					# print(frame.shape[:2])
+					print('total time :', t8 - t7)
 					count+= 1
 					if count % 100==0:
 						print(count)
-					# result.write(frame_wwrite)
 					if cv2.waitKey(25) & 0xFF == ord('q'):
 						break
-			# Break the loop
 			else:
 				break
 	except KeyboardInterrupt:
 		cv2.destroyAllWindows()
 		cap.release()
-		# result.release()
-	# cv2.destroyAllWindows()
