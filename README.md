@@ -10,7 +10,10 @@ https://code.luasoftware.com/tutorials/linux/auto-start-python-script-on-boot-sy
 ```bash
 sudo nano /etc/systemd/system/reID_copy.service
 ```
-
+check program running
+```bash
+cat reID_copy.log
+```
 [Unit]
 
 After=network.service
